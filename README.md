@@ -1,4 +1,4 @@
-# *~=Moranometer=~*
+# \*~=Moranometer=~*
 
 The Moranometer is a simple, easy-to-use, and powerful tool for
 visualizing the distribution of a variable in a dataset.
