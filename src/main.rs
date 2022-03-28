@@ -1,15 +1,19 @@
 use std::env;
+use std::sync::Arc;
 use teloxide::{prelude2::*, utils::command::BotCommand};
+use tokio::sync::Mutex;
 extern crate pretty_env_logger;
-#[macro_use] extern crate log;
+#[macro_use]
+extern crate log;
 
-mod users;
 mod handlers;
 mod tellegram_commands;
+mod users;
+use tellegram_commands::BasicCommands;
 use users::Users;
-use tellegram_commands::{BasicCommands};
 
 type MyHandlerType = Handler<'static, DependencyMap, anyhow::Result<()>>;
+type Moranometer = Arc<Mutex<MoranometerInner>>;
 
 async fn set_command(bot: &AutoSend<Bot>) {
     bot.set_my_commands(BasicCommands::bot_commands())
@@ -33,9 +37,16 @@ async fn dispatch<'a>(bot: AutoSend<Bot>, handler: MyHandlerType, dep: Moranomet
         .await;
 }
 
-#[derive(Clone)]
-struct Moranometer {
-    users: Box<Users>,
+struct MoranometerInner {
+    users: Users,
+}
+
+impl MoranometerInner {
+    async fn create() -> Arc<Mutex<Self>> {
+        Arc::new(Mutex::new(Self {
+            users: Users::load().await,
+        }))
+    }
 }
 
 #[tokio::main]
@@ -53,9 +64,7 @@ async fn main() {
         .branch(handlers::message_handler())
         .branch(handlers::callback_handler());
 
-    let moranometer = Moranometer {
-        users: Box::new(Users::load().await),
-    };
+    let moranometer = MoranometerInner::create().await;
 
     dispatch(bot, handler, moranometer).await;
 }
