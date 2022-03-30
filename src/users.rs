@@ -1,17 +1,25 @@
 use anyhow;
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::{
     fs::File,
     io::{Read, Write},
 };
+use trellolon::{Board, Card, Component};
 
 const USERS_FILE: &'static str = "users.json";
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
-struct User {
-    name: String,
-    id: i64,
-    boards: Vec<String>,
+pub struct User {
+    pub name: String,
+    pub id: i64,
+    pub boards: Vec<String>,
+}
+
+impl User {
+    pub fn is_moderator(&self, board_name: &str) -> bool {
+        self.name == "Moran"
+    }
 }
 
 #[derive(Clone)]
@@ -53,6 +61,10 @@ impl Users {
         Ok(())
     }
 
+    pub fn get_user(&self, id: i64) -> Option<&User> {
+        self.db.iter().find(|user| user.id == id)
+    }
+
     pub fn get_boards(&self, name: &str) -> Option<Vec<String>> {
         let user = self.db.iter().find(|u| u.name == name)?;
 
@@ -75,4 +87,30 @@ fn write_to_file(users: &Vec<User>) -> anyhow::Result<()> {
     file.write_all(user_json.as_bytes())?;
 
     Ok(())
+}
+
+#[async_trait]
+pub trait Visible {
+    async fn is_visible(&self, user: &User) -> bool;
+}
+
+#[async_trait]
+impl Visible for Card {
+    async fn is_visible(&self, user: &User) -> bool {
+        if let Some(labels) = self.get_all().await {
+            return labels.iter().any(|label| label.name == self.name);
+        }
+
+        false
+    }
+}
+
+#[async_trait]
+impl Visible for Board {
+    async fn is_visible(&self, user: &User) -> bool {
+        return user
+            .boards
+            .iter()
+            .any(|board_name| board_name == &self.name);
+    }
 }
