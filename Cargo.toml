@@ -15,3 +15,4 @@ trellolon = {git = "https://github.com/Moran296/Trellolon.git"}
 serde = { version = "1.0.136", features = ["derive"] }
 serde_json = { version = "1.0.79"}
 lazy_static = "1.4.0"
+async-trait = "0.1.53"

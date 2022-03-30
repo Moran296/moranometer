@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use teloxide::utils::command::BotCommand;
 
 #[derive(BotCommand, Clone)]
@@ -11,6 +12,9 @@ pub enum BasicCommands {
     MyCards,
 }
 
-#[derive(BotCommand, Clone)]
+#[derive(BotCommand, Clone, Serialize, Deserialize)]
 #[command(rename = "lowercase", description = "These commands are supported:")]
-pub enum CallbackCommands {}
+pub enum CallbackCommands {
+    PresentCard(String),
+    CommentCard(String),
+}
