@@ -7,9 +7,12 @@ extern crate pretty_env_logger;
 extern crate log;
 
 mod handlers;
-mod tellegram_commands;
+mod inline_callbacks;
+mod message_commands;
+mod replies;
 mod users;
-use tellegram_commands::BasicCommands;
+
+use message_commands::BasicCommands;
 use users::Users;
 
 type MyHandlerType = Handler<'static, DependencyMap, anyhow::Result<()>>;
@@ -61,8 +64,9 @@ async fn main() {
     set_command(&bot).await;
 
     let handler = dptree::entry()
-        .branch(handlers::message_handler())
-        .branch(handlers::callback_handler());
+        .branch(handlers::basic_commands_handler())
+        .branch(handlers::callbacks_handler())
+        .branch(handlers::reply_message_handler());
 
     let moranometer = MoranometerInner::create().await;
 
