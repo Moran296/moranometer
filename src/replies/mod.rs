@@ -5,7 +5,6 @@ use teloxide::prelude2::*;
 mod card_comment;
 use card_comment::CardComment;
 mod comment_notify;
-use comment_notify::CommentNotify;
 
 pub(crate) async fn reply_message_endpoint(
     msg: Message,

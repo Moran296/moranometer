@@ -5,7 +5,7 @@ use std::{
     fs::File,
     io::{Read, Write},
 };
-use trellolon::{Board, Card, Component, Creatable, List};
+use trellolon::{Board, Card,Creatable, List};
 
 const USERS_FILE: &'static str = "users.json";
 
@@ -17,7 +17,7 @@ pub struct User {
 }
 
 impl User {
-    pub fn is_moderator(&self, board_name: &str) -> bool {
+    pub fn is_moderator(&self) -> bool {
         self.name == "Moran"
     }
 }
@@ -65,15 +65,15 @@ impl Users {
         self.db.iter().find(|user| user.id == id)
     }
 
-    pub fn get_boards(&self, name: &str) -> Option<Vec<String>> {
-        let user = self.db.iter().find(|u| u.name == name)?;
+    // pub fn get_boards(&self, name: &str) -> Option<Vec<String>> {
+    //     let user = self.db.iter().find(|u| u.name == name)?;
 
-        if user.boards.is_empty() {
-            return None;
-        }
+    //     if user.boards.is_empty() {
+    //         return None;
+    //     }
 
-        Some(user.boards.clone())
-    }
+    //     Some(user.boards.clone())
+    // }
 }
 
 fn write_to_file(users: &Vec<User>) -> anyhow::Result<()> {

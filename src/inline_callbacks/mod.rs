@@ -63,8 +63,6 @@ pub(crate) async fn callback_command_endpoint(
                 .send()
                 .await?;
         }
-
-        _ => {}
     };
 
     Ok(())

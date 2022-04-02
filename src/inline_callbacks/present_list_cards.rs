@@ -6,18 +6,17 @@ use teloxide::prelude2::*;
 use teloxide::types::{InlineKeyboardButton, InlineKeyboardMarkup};
 use trellolon::{Component, List};
 
-pub(crate) struct PresentListCards<'a> {
-    user: &'a User,
+pub(crate) struct PresentListCards {
     list: List,
     query: CallbackQuery,
 }
 
-impl<'a> PresentListCards<'a> {
+impl<'a> PresentListCards {
     pub async fn new(
         user: &'a User,
         list_id: &'a str,
         query: CallbackQuery,
-    ) -> anyhow::Result<PresentListCards<'a>> {
+    ) -> anyhow::Result<PresentListCards> {
         if query.message.is_none() {
             anyhow::bail!("query is to old");
         }
@@ -33,7 +32,7 @@ impl<'a> PresentListCards<'a> {
             anyhow::bail!("list is not visible to user");
         }
 
-        Ok(Self { user, list, query })
+        Ok(Self { list, query })
     }
 
     pub async fn execute(&self, bot: &AutoSend<Bot>) -> anyhow::Result<()> {
@@ -63,7 +62,7 @@ impl<'a> PresentListCards<'a> {
         bot.edit_message_text(
             *self.query.chat_id().as_ref().unwrap(),
             self.query.message.as_ref().unwrap().id,
-            "hii".to_string(),
+            &self.list.name,
         )
         .reply_markup(InlineKeyboardMarkup::new(buttons))
         .send()

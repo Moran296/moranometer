@@ -1,7 +1,5 @@
 use crate::inline_callbacks::CallbackCommands;
 use crate::users::{User, Visible};
-use anyhow::anyhow;
-use teloxide::prelude2::Message;
 use teloxide::prelude2::*;
 use teloxide::types::{InlineKeyboardButton, InlineKeyboardMarkup};
 use trellolon::Card;
