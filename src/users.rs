@@ -97,12 +97,15 @@ pub trait Visible {
 #[async_trait]
 impl Visible for Card {
     async fn is_visible(&self, user: &User) -> bool {
-        // if let Some(labels) = self.get_all().await {
-        //     return labels.iter().any(|label| label.name == self.name);
-        // }
+        if user.is_moderator() {
+            return true;
+        }
 
-        // false
-        true
+        if let Some(board) = self.get_board().await {
+            return board.is_visible(user).await;
+        }
+
+        false
     }
 }
 
