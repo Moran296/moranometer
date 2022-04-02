@@ -1,11 +1,11 @@
 use crate::card_commands::{card_commands_endpoint, CardCommands};
 use crate::{Moranometer, MyHandlerType, Users};
 use anyhow::anyhow;
+use dptree::prelude::*;
 use serde::{Deserialize, Serialize};
 use teloxide::dispatching2::UpdateFilterExt;
 use teloxide::types::Message;
 use teloxide::{prelude2::*, utils::command::BotCommand};
-use dptree::prelude::*;
 
 //================MESSAGES=====================
 use crate::message_commands::*;
@@ -30,7 +30,10 @@ use crate::replies::*;
 pub fn reply_message_handler() -> MyHandlerType {
     Update::filter_message()
         //.branch(Message::filter_reply_to_message().endpoint(reply_message_endpoint))
-        .branch(dptree::filter(|x: Message| x.reply_to_message().is_some()).endpoint(reply_message_endpoint))
+        .branch(
+            dptree::filter(|x: Message| x.reply_to_message().is_some())
+                .endpoint(reply_message_endpoint),
+        )
 }
 
 //================CALLBACKS=====================

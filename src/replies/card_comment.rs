@@ -1,30 +1,58 @@
-use teloxide::prelude2::Message;
+use super::comment_notify::CommentNotify;
+use crate::users::{User, Visible};
+use anyhow::anyhow;
+use teloxide::prelude2::*;
+use teloxide::{prelude::Requester, prelude2::Message};
+use trellolon::Card;
 
 #[derive(Debug)]
-pub struct CardComment<'a> {
-    card_id: &'a str,
+pub(crate) struct CardComment<'a> {
+    card: Card,
     comment: &'a str,
+    user: &'a User,
 }
 
 impl<'a> CardComment<'a> {
     const CARD_ID_LEN: usize = 24;
     const COMMENT_REQUEST: &'static str = "/comment ";
 
-    pub fn from(msg: &'a Message) -> Option<Self> {
-        log::info!("{}", line!());
+    pub async fn from(msg: &'a Message, user: &'a User) -> Option<CardComment<'a>> {
         let comment = msg.text()?;
-        log::info!("{}", line!());
         let reply_to_text = msg.reply_to_message()?.text()?;
-        log::info!("{}", line!());
 
         let card_id = reply_to_text.strip_prefix(Self::COMMENT_REQUEST)?;
-        log::info!("{}", line!());
         let is_valid_id = card_id.len() == Self::CARD_ID_LEN;
-        log::info!("{} is valid id {is_valid_id}", line!());
-        match is_valid_id {
-            true => Some(CardComment { card_id, comment }),
-
-            false => None,
+        if !is_valid_id {
+            log::warn!("user trying to comment a non visible card!");
+            return None;
         }
+
+        let card = Card::get(card_id).await?;
+        if !card.is_visible(user).await {
+            log::warn!("user trying to comment a non visible card!");
+            return None;
+        }
+
+        Some(CardComment {
+            card,
+            comment,
+            user,
+        })
+    }
+
+    pub async fn execute(self, bot: &'a AutoSend<Bot>) -> anyhow::Result<CommentNotify<'a>> {
+        let comment = format!("{}: {}", self.user.name, self.comment);
+        let card = self
+            .card
+            .add_comment(&comment)
+            .await
+            .ok_or(anyhow!("could not add comment"))?;
+
+        bot.send_message(self.user.id, "card commented!")
+            .send()
+            .await?;
+
+        log::info!("comment added to card");
+        Ok(CommentNotify::from(card, comment, self.user))
     }
 }

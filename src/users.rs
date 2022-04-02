@@ -23,8 +23,8 @@ impl User {
 }
 
 #[derive(Clone)]
-pub struct Users {
-    db: Vec<User>,
+pub(crate) struct Users {
+    pub(crate) db: Vec<User>,
 }
 
 impl Users {

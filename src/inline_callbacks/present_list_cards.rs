@@ -2,7 +2,6 @@ use crate::inline_callbacks::CallbackCommands;
 use crate::users::{User, Visible};
 use anyhow::anyhow;
 use teloxide::dispatching2::dialogue::GetChatId;
-use teloxide::payloads::EditMessageText;
 use teloxide::prelude2::*;
 use teloxide::types::{InlineKeyboardButton, InlineKeyboardMarkup};
 use trellolon::{Component, List};
