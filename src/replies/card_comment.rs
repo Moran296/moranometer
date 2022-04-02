@@ -8,23 +8,23 @@ pub struct CardComment<'a> {
 
 impl<'a> CardComment<'a> {
     const CARD_ID_LEN: usize = 24;
-    const COMMENT_REQUEST : &'static str = "/comment ";
+    const COMMENT_REQUEST: &'static str = "/comment ";
 
     pub fn from(msg: &'a Message) -> Option<Self> {
-        let comment = msg.text()?;        
+        log::info!("{}", line!());
+        let comment = msg.text()?;
+        log::info!("{}", line!());
         let reply_to_text = msg.reply_to_message()?.text()?;
+        log::info!("{}", line!());
 
         let card_id = reply_to_text.strip_prefix(Self::COMMENT_REQUEST)?;
-        let is_valid_id = card_id.chars().all(|c| c.is_numeric()) && card_id.len() == Self::CARD_ID_LEN;
+        log::info!("{}", line!());
+        let is_valid_id = card_id.len() == Self::CARD_ID_LEN;
+        log::info!("{} is valid id {is_valid_id}", line!());
         match is_valid_id {
-            true => Some(CardComment {
-                card_id,
-                comment
-            }),
+            true => Some(CardComment { card_id, comment }),
 
             false => None,
         }
     }
-
-
 }

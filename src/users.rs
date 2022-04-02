@@ -5,7 +5,7 @@ use std::{
     fs::File,
     io::{Read, Write},
 };
-use trellolon::{Board, Card, Component};
+use trellolon::{Board, Card, Component, Creatable, List};
 
 const USERS_FILE: &'static str = "users.json";
 
@@ -97,11 +97,12 @@ pub trait Visible {
 #[async_trait]
 impl Visible for Card {
     async fn is_visible(&self, user: &User) -> bool {
-        if let Some(labels) = self.get_all().await {
-            return labels.iter().any(|label| label.name == self.name);
-        }
+        // if let Some(labels) = self.get_all().await {
+        //     return labels.iter().any(|label| label.name == self.name);
+        // }
 
-        false
+        // false
+        true
     }
 }
 
@@ -112,5 +113,17 @@ impl Visible for Board {
             .boards
             .iter()
             .any(|board_name| board_name == &self.name);
+    }
+}
+
+#[async_trait]
+impl Visible for List {
+    async fn is_visible(&self, user: &User) -> bool {
+        let board = self.get_father().await;
+        if let Some(board) = board {
+            board.is_visible(user).await
+        } else {
+            false
+        }
     }
 }

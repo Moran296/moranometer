@@ -2,6 +2,9 @@ use crate::Moranometer;
 use anyhow::anyhow;
 use teloxide::{prelude2::*, utils::command::BotCommand};
 
+mod present_lists;
+use present_lists::PresentLists;
+
 #[derive(BotCommand, Clone)]
 #[command(rename = "lowercase", description = "These commands are supported:")]
 pub enum BasicCommands {
@@ -26,17 +29,24 @@ pub(crate) async fn basic_commands_endpoint(
 
     let mut cfg = cfg.lock().await;
     cfg.users.add(user_name, user_id).await?;
+    let user = cfg.users.get_user(user_id).unwrap();
 
-    let response = match cmd {
-        BasicCommands::Help => Some(BasicCommands::descriptions()),
+    match cmd {
+        BasicCommands::Help => {
+            bot.send_message(user_id, BasicCommands::descriptions())
+                .send()
+                .await?;
+        }
 
-        BasicCommands::Start => Some(BasicCommands::descriptions()),
+        BasicCommands::Start => {
+            bot.send_message(user_id, BasicCommands::descriptions())
+                .send()
+                .await?;
+        }
 
-        BasicCommands::MyCards => Some(BasicCommands::descriptions()),
-    };
-
-    if let Some(response) = response {
-        bot.send_message(msg.chat.id, &response).send().await?;
+        BasicCommands::MyCards => {
+            PresentLists::new(user).await?.execute(&bot).await?;
+        }
     }
 
     Ok(())
