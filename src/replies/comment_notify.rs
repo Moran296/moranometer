@@ -4,6 +4,8 @@ use teloxide::prelude2::*;
 use teloxide::types::{InlineKeyboardButton, InlineKeyboardMarkup};
 use trellolon::Card;
 
+const NOTIFIED_EMOJIS : [&'static str; 5] = ["👲🏻", "🧕🏻", "🧛🏻", "🧟🏻", "🧙🏻"];
+
 pub(crate) struct CommentNotify<'a> {
     card: Card,
     comment: String,
@@ -56,18 +58,19 @@ impl<'a> CommentNotify<'a> {
 
         let keyboard = InlineKeyboardMarkup::default().append_row(vec![
             InlineKeyboardButton::callback(
-                "show card".to_string(),
+                " 🕵🏻‍♀️ show card".to_string(),
                 serde_json::to_string(&CallbackCommands::PresentCard(self.card.id.clone()))
                     .unwrap(),
             ),
             InlineKeyboardButton::callback(
-                "comment".to_string(),
+                "🤬 comment".to_string(),
                 serde_json::to_string(&CallbackCommands::CommentCard(self.card.id.clone()))
                     .unwrap(),
             ),
         ]);
 
         let mut notifieds = "notified: ".to_string();
+        let mut i = 0;
         for user in notified_users {
             log::info!("notifying user: {}", user.id);
 
@@ -76,7 +79,8 @@ impl<'a> CommentNotify<'a> {
                 .send()
                 .await?;
 
-            notifieds.push_str(&format!("\n{}, ", user.name));
+            notifieds.push_str(&format!("\n{} - {}, ", NOTIFIED_EMOJIS[i], user.name));
+            i = i + 1  % NOTIFIED_EMOJIS.len();
         }
 
         log::info!("{notifieds}");

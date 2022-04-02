@@ -1,8 +1,8 @@
 use crate::card_commands::{card_commands_endpoint, CardCommands};
-use crate::{MyHandlerType};
+use crate::MyHandlerType;
 use teloxide::dispatching2::UpdateFilterExt;
+use teloxide::prelude2::*;
 use teloxide::types::Message;
-use teloxide::{prelude2::* };
 
 //================MESSAGES=====================
 use crate::message_commands::*;

@@ -5,7 +5,7 @@ use std::{
     fs::File,
     io::{Read, Write},
 };
-use trellolon::{Board, Card,Creatable, List};
+use trellolon::{Board, Card, Creatable, List};
 
 const USERS_FILE: &'static str = "users.json";
 

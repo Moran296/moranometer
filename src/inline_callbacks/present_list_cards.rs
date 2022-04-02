@@ -17,13 +17,6 @@ impl<'a> PresentListCards {
         list_id: &'a str,
         query: CallbackQuery,
     ) -> anyhow::Result<PresentListCards> {
-        if query.message.is_none() {
-            anyhow::bail!("query is to old");
-        }
-
-        if query.message.is_none() {
-            anyhow::bail!("query dont have message id");
-        }
 
         let list = List::get(list_id)
             .await
@@ -38,7 +31,15 @@ impl<'a> PresentListCards {
     pub async fn execute(&self, bot: &AutoSend<Bot>) -> anyhow::Result<()> {
         let cards = self.list.get_all().await;
         if cards.is_none() {
-            //
+            bot.edit_message_text(
+                *self.query.chat_id().as_ref().unwrap(),
+                self.query.message.as_ref().unwrap().id,
+                "no cards in this list...",
+            )
+            .send()
+            .await?;
+
+            return Ok(());
         }
 
         let mut buttons = vec![vec![]];
@@ -52,17 +53,22 @@ impl<'a> PresentListCards {
                     )
                     .unwrap();
 
-                    InlineKeyboardButton::callback(card.name.clone(), callback)
+                    InlineKeyboardButton::callback(format!("🎬 {}", card.name), callback)
                 })
                 .collect();
 
             buttons.push(row);
         }
 
+        buttons.push(vec![InlineKeyboardButton::callback(
+            "🚜 back".to_owned(),
+            serde_json::to_string(&CallbackCommands::PresentLists).unwrap(),
+        )]);
+
         bot.edit_message_text(
             *self.query.chat_id().as_ref().unwrap(),
             self.query.message.as_ref().unwrap().id,
-            &self.list.name,
+            format!("🤽 {}", &self.list.name),
         )
         .reply_markup(InlineKeyboardMarkup::new(buttons))
         .send()

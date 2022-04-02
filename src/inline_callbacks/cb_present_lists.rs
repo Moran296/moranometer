@@ -1,17 +1,18 @@
 use crate::inline_callbacks::CallbackCommands;
 use crate::users::User;
 use anyhow::anyhow;
+use teloxide::dispatching2::dialogue::GetChatId;
 use teloxide::prelude2::*;
 use teloxide::types::{InlineKeyboardButton, InlineKeyboardMarkup};
 use trellolon::{Board, Component, List};
 
-pub(crate) struct PresentLists<'a> {
-    user: &'a User,
+pub(crate) struct CbPresentLists {
     lists: Vec<List>,
+    query: CallbackQuery,
 }
 
-impl<'a> PresentLists<'a> {
-    pub async fn new(user: &'a User) -> anyhow::Result<PresentLists<'a>> {
+impl CbPresentLists {
+    pub async fn new(user: &User, query: CallbackQuery) -> anyhow::Result<CbPresentLists> {
         let mut lists = vec![];
 
         for board in &user.boards {
@@ -28,7 +29,7 @@ impl<'a> PresentLists<'a> {
             anyhow::bail!("no lists found");
         }
 
-        Ok(PresentLists { user, lists })
+        Ok(CbPresentLists { lists, query })
     }
 
     pub async fn execute(&self, bot: &AutoSend<Bot>) -> anyhow::Result<()> {
@@ -43,17 +44,21 @@ impl<'a> PresentLists<'a> {
                     )
                     .unwrap();
 
-                    InlineKeyboardButton::callback(list.name.clone(), callback)
+                    InlineKeyboardButton::callback(format!("📜 {}", list.name), callback)
                 })
                 .collect();
 
             buttons.push(row);
         }
 
-        bot.send_message(self.user.id, "🤹‍♀️ choose the requested category".to_owned())
-            .reply_markup(InlineKeyboardMarkup::new(buttons))
-            .send()
-            .await?;
+        bot.edit_message_text(
+            *self.query.chat_id().as_ref().unwrap(),
+            self.query.message.as_ref().unwrap().id,
+            "🤹 choose the requested category".to_owned(),
+        )
+        .reply_markup(InlineKeyboardMarkup::new(buttons))
+        .send()
+        .await?;
 
         Ok(())
     }
