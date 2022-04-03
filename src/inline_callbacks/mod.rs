@@ -88,10 +88,24 @@ pub(crate) async fn callback_command_endpoint(
                 .send()
                 .await?;
         }
+
         CallbackCommands::AddCard(list_id) => {
+            bot.edit_message_text(
+                user.id,
+                callback.message.unwrap().id,
+                format!(
+                    "to add a card, enter the title on the first line
+                            \n and the description (if needed) in the following lines.
+                            \n To cancel, just exit the reply."
+                ),
+            )
+            .send()
+            .await?;
+
             bot.send_message(user.id, format!("/add_card {list_id}"))
                 .reply_markup(
-                    ForceReply::new().input_field_placeholder(Some("card title".to_string())),
+                    ForceReply::new()
+                        .input_field_placeholder(Some("1st line title, 2nd line desc".to_string())),
                 )
                 .send()
                 .await?;

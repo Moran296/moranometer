@@ -13,7 +13,11 @@ pub(crate) struct PresentCard {
 }
 
 impl<'a> PresentCard {
-    pub async fn new(user: &'a User, card_id: &'a str, query: CallbackQuery) -> anyhow::Result<PresentCard> {
+    pub async fn new(
+        user: &'a User,
+        card_id: &'a str,
+        query: CallbackQuery,
+    ) -> anyhow::Result<PresentCard> {
         let card = Card::get(card_id)
             .await
             .ok_or(anyhow!("card does not exist"))?;
@@ -21,7 +25,7 @@ impl<'a> PresentCard {
             anyhow::bail!("card is not visible to user");
         }
 
-        Ok(Self {card, query })
+        Ok(Self { card, query })
     }
 
     pub async fn execute(&self, bot: &AutoSend<Bot>) -> anyhow::Result<()> {
@@ -64,11 +68,12 @@ impl<'a> PresentCard {
         bot.edit_message_text(
             *self.query.chat_id().as_ref().unwrap(),
             self.query.message.as_ref().unwrap().id,
-             card_str,
-        ) .with_payload_mut(|p| p.parse_mode = Some(ParseMode::Html))
-            .reply_markup(keyboard)
-            .send()
-            .await?;
+            card_str,
+        )
+        .with_payload_mut(|p| p.parse_mode = Some(ParseMode::Html))
+        .reply_markup(keyboard)
+        .send()
+        .await?;
 
         Ok(())
     }

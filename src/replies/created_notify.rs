@@ -6,19 +6,14 @@ use trellolon::Card;
 
 const NOTIFIED_EMOJIS: [&'static str; 5] = ["👲🏻", "🧕🏻", "🧛🏻", "🧟🏻", "🧙🏻"];
 
-pub(crate) struct CommentNotify<'a> {
+pub(crate) struct CreatedNotify<'a> {
     card: Card,
-    comment: String,
     commenter: &'a User,
 }
 
-impl<'a> CommentNotify<'a> {
-    pub fn from(card: Card, comment: String, commenter: &'a User) -> CommentNotify<'a> {
-        CommentNotify {
-            card,
-            comment,
-            commenter,
-        }
+impl<'a> CreatedNotify<'a> {
+    pub fn from(card: Card, commenter: &'a User) -> CreatedNotify<'a> {
+        CreatedNotify { card, commenter }
     }
 
     async fn get_relevant_users(
@@ -54,7 +49,7 @@ impl<'a> CommentNotify<'a> {
             return Ok(());
         }
 
-        let notify = format!("new comment on: {}:\n {}", self.card.name, self.comment);
+        let notify = format!("new card by{}:\n {} ", self.card.name, self.card.name);
 
         let keyboard = InlineKeyboardMarkup::default().append_row(vec![
             InlineKeyboardButton::callback(
