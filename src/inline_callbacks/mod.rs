@@ -50,7 +50,7 @@ pub(crate) async fn callback_command_endpoint(
         anyhow::bail!("query dont have message id");
     }
 
-    log::info!("{command:?}");
+    log::info!("{user_name}: {command:?}", user_name = user.name);
 
     match command {
         CallbackCommands::PresentLists => {
