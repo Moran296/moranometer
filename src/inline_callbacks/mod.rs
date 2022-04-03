@@ -12,17 +12,22 @@ use cb_present_lists::CbPresentLists as PresentLists;
 use present_card::PresentCard;
 use present_list_cards::PresentListCards;
 
+type CardId = String;
+type ListId = String;
+
 #[derive(Debug, BotCommand, Clone, Serialize, Deserialize)]
 #[command(rename = "lowercase", description = "These commands are supported:")]
 pub enum CallbackCommands {
     #[serde(rename = "pl")]
     PresentLists,
     #[serde(rename = "plc")]
-    PresentListsCards(String),
+    PresentListsCards(ListId),
     #[serde(rename = "pc")]
-    PresentCard(String),
+    PresentCard(CardId),
     #[serde(rename = "cc")]
-    CommentCard(String),
+    CommentCard(CardId),
+    #[serde(rename = "ac")]
+    AddCard(ListId),
 }
 
 pub(crate) async fn callback_command_endpoint(
@@ -79,6 +84,14 @@ pub(crate) async fn callback_command_endpoint(
                 .reply_markup(
                     ForceReply::new()
                         .input_field_placeholder(Some("comment here senor".to_string())),
+                )
+                .send()
+                .await?;
+        }
+        CallbackCommands::AddCard(list_id) => {
+            bot.send_message(user.id, format!("/add_card {list_id}"))
+                .reply_markup(
+                    ForceReply::new().input_field_placeholder(Some("card title".to_string())),
                 )
                 .send()
                 .await?;

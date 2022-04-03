@@ -17,7 +17,6 @@ impl<'a> PresentListCards {
         list_id: &'a str,
         query: CallbackQuery,
     ) -> anyhow::Result<PresentListCards> {
-
         let list = List::get(list_id)
             .await
             .ok_or(anyhow!("list does not exist"))?;
@@ -63,6 +62,10 @@ impl<'a> PresentListCards {
         buttons.push(vec![InlineKeyboardButton::callback(
             "🚜 back".to_owned(),
             serde_json::to_string(&CallbackCommands::PresentLists).unwrap(),
+        )]);
+        buttons.push(vec![InlineKeyboardButton::callback(
+            "✋🏼 add card".to_owned(),
+            serde_json::to_string(&CallbackCommands::AddCard(self.list.id.clone())).unwrap(),
         )]);
 
         bot.edit_message_text(
