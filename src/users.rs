@@ -18,7 +18,7 @@ pub struct User {
 
 impl User {
     pub fn is_moderator(&self) -> bool {
-        self.name == "Moran"
+        self.name == "Moran" || self.name == "Jenny"
     }
 }
 
@@ -101,11 +101,7 @@ impl Visible for Card {
             return true;
         }
 
-        if let Some(board) = self.get_board().await {
-            return board.is_visible(user).await;
-        }
-
-        false
+        self.labels.iter().any(|label| label.name == user.name)
     }
 }
 

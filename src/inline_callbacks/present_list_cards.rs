@@ -4,11 +4,12 @@ use anyhow::anyhow;
 use teloxide::dispatching2::dialogue::GetChatId;
 use teloxide::prelude2::*;
 use teloxide::types::{InlineKeyboardButton, InlineKeyboardMarkup};
-use trellolon::{Component, List};
+use trellolon::{Card, Component, List};
 
 pub(crate) struct PresentListCards {
     list: List,
     query: CallbackQuery,
+    cards: Option<Vec<Card>>,
 }
 
 impl<'a> PresentListCards {
@@ -24,35 +25,66 @@ impl<'a> PresentListCards {
             anyhow::bail!("list is not visible to user");
         }
 
-        Ok(Self { list, query })
+        let cards = list.get_all().await.unwrap_or(vec![]);
+
+        let mut relevants = vec![];
+        for card in cards {
+            if card.is_visible(user).await {
+                relevants.push(card);
+            }
+        }
+
+        let relevants = if relevants.is_empty() {
+            None
+        } else {
+            Some(relevants)
+        };
+
+        Ok(Self {
+            list,
+            query,
+            cards: relevants,
+        })
+    }
+
+    async fn return_empty(&self, bot: &AutoSend<Bot>) -> anyhow::Result<()> {
+        bot.edit_message_text(
+            *self.query.chat_id().as_ref().unwrap(),
+            self.query.message.as_ref().unwrap().id,
+            "no cards in this list...",
+        )
+        .reply_markup(InlineKeyboardMarkup::new(vec![vec![
+            InlineKeyboardButton::callback(
+                "🚜 back".to_owned(),
+                serde_json::to_string(&CallbackCommands::PresentLists).unwrap(),
+            ),
+        ]]))
+        .send()
+        .await?;
+
+        return Ok(());
     }
 
     pub async fn execute(&self, bot: &AutoSend<Bot>) -> anyhow::Result<()> {
-        let cards = self.list.get_all().await;
-        if cards.is_none() {
-            bot.edit_message_text(
-                *self.query.chat_id().as_ref().unwrap(),
-                self.query.message.as_ref().unwrap().id,
-                "no cards in this list...",
-            )
-            .send()
-            .await?;
-
-            return Ok(());
+        if self.cards.is_none() {
+            return self.return_empty(bot).await;
         }
 
         let mut buttons = vec![vec![]];
-        let cards = cards.unwrap();
+        let cards = self.cards.as_ref().unwrap();
         for cards in cards.chunks(3) {
             let row = cards
                 .iter()
-                .map(|card| {
+                .filter_map(|card| {
                     let callback = serde_json::to_string::<CallbackCommands>(
                         &CallbackCommands::PresentCard(card.id.clone()),
                     )
                     .unwrap();
 
-                    InlineKeyboardButton::callback(format!("🎬 {}", card.name), callback)
+                    Some(InlineKeyboardButton::callback(
+                        format!("🎬 {}", card.name),
+                        callback,
+                    ))
                 })
                 .collect();
 

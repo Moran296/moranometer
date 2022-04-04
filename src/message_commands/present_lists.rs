@@ -37,13 +37,21 @@ impl<'a> PresentLists<'a> {
         for lists in self.lists.chunks(3) {
             let row = lists
                 .iter()
-                .map(|list| {
+                .filter_map(|list| {
+                    // consider only visible lists, this function cannot be called inside iterator
+                    // if !list.is_visible(self.user) {
+                    //     return None;
+                    // }
+
                     let callback = serde_json::to_string::<CallbackCommands>(
                         &CallbackCommands::PresentListsCards(list.id.clone()),
                     )
                     .unwrap();
 
-                    InlineKeyboardButton::callback(list.name.clone(), callback)
+                    Some(InlineKeyboardButton::callback(
+                        format!("📜 {}", list.name),
+                        callback,
+                    ))
                 })
                 .collect();
 

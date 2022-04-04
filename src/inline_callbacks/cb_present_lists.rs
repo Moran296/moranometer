@@ -39,6 +39,11 @@ impl CbPresentLists {
             let row = lists
                 .iter()
                 .map(|list| {
+                    // consider only visible lists, this function cannot be called inside iterator
+                    // if !list.is_visible(self.user) {
+                    //     return None;
+                    // }
+
                     let callback = serde_json::to_string::<CallbackCommands>(
                         &CallbackCommands::PresentListsCards(list.id.clone()),
                     )
