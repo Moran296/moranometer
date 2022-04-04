@@ -47,48 +47,33 @@ impl<'a> PresentListCards {
         })
     }
 
-    async fn return_empty(&self, bot: &AutoSend<Bot>) -> anyhow::Result<()> {
-        bot.edit_message_text(
-            *self.query.chat_id().as_ref().unwrap(),
-            self.query.message.as_ref().unwrap().id,
-            "no cards in this list...",
-        )
-        .reply_markup(InlineKeyboardMarkup::new(vec![vec![
-            InlineKeyboardButton::callback(
-                "🚜 back".to_owned(),
-                serde_json::to_string(&CallbackCommands::PresentLists).unwrap(),
-            ),
-        ]]))
-        .send()
-        .await?;
-
-        return Ok(());
-    }
-
     pub async fn execute(&self, bot: &AutoSend<Bot>) -> anyhow::Result<()> {
-        if self.cards.is_none() {
-            return self.return_empty(bot).await;
-        }
-
         let mut buttons = vec![vec![]];
-        let cards = self.cards.as_ref().unwrap();
-        for cards in cards.chunks(3) {
-            let row = cards
-                .iter()
-                .filter_map(|card| {
-                    let callback = serde_json::to_string::<CallbackCommands>(
-                        &CallbackCommands::PresentCard(card.id.clone()),
-                    )
-                    .unwrap();
 
-                    Some(InlineKeyboardButton::callback(
-                        format!("🎬 {}", card.name),
-                        callback,
-                    ))
-                })
-                .collect();
+        if let Some(cards) = self.cards.as_ref() {
+            for cards in cards.chunks(3) {
+                let row = cards
+                    .iter()
+                    .filter_map(|card| {
+                        let callback = serde_json::to_string::<CallbackCommands>(
+                            &CallbackCommands::PresentCard(card.id.clone()),
+                        )
+                        .unwrap();
 
-            buttons.push(row);
+                        Some(InlineKeyboardButton::callback(
+                            format!("🎬 {}", card.name),
+                            callback,
+                        ))
+                    })
+                    .collect();
+
+                buttons.push(row);
+            }
+        } else {
+                buttons.push(vec![InlineKeyboardButton::url(
+                    "🤷‍♀️ no cards found".to_owned(),
+                    reqwest::Url::parse("https://www.youtube.com/watch?v=dQw4w9WgXcQ").unwrap(),
+                )]);
         }
 
         buttons.push(vec![InlineKeyboardButton::callback(
