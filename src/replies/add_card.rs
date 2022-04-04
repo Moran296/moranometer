@@ -5,7 +5,7 @@ use anyhow::anyhow;
 use teloxide::prelude2::*;
 use teloxide::types::{InlineKeyboardButton, InlineKeyboardMarkup};
 use teloxide::{prelude::Requester, prelude2::Message};
-use trellolon::{Card, Creatable, List};
+use trellolon::{Label, Card, Creatable, List};
 
 #[derive(Debug)]
 pub(crate) struct AddCard<'a> {
@@ -38,6 +38,24 @@ impl<'a> AddCard<'a> {
         })
     }
 
+    async fn add_label(&self, card: &Card) -> anyhow::Result<()> {
+        if self.user.is_moderator() {
+            return Ok(())
+        }
+
+        let labels = Label::get_from_board(&card.id_board).await;
+        if let Some(labels) = labels {
+            if let Some(label) = labels.iter().find(|l| l.name == self.user.name) {
+                card.clone().add_label(&label).await.ok_or(anyhow!("could not add label"))?;
+            } else {
+                log::warn!("user added card but has no label");
+            }
+        }
+
+
+        Ok(())
+    }
+
     pub async fn execute(self, bot: &'a AutoSend<Bot>) -> anyhow::Result<CreatedNotify<'a>> {
         let mut lines = self.card_txt.lines();
         let title = lines.next().ok_or(anyhow!("no title"))?;
@@ -63,12 +81,14 @@ impl<'a> AddCard<'a> {
             ),
         ]);
 
+        self.add_label(&card).await?;
+
         bot.send_message(self.user.id, "card created!")
             .reply_markup(keyboard)
             .send()
             .await?;
 
-        log::info!("comment added to card");
+        log::info!("card added");
         Ok(CreatedNotify::from(card, self.user))
     }
 }
