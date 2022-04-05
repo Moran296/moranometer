@@ -1,4 +1,3 @@
-use crate::card_commands::{card_commands_endpoint, CardCommands};
 use crate::MyHandlerType;
 use teloxide::dispatching2::UpdateFilterExt;
 use teloxide::prelude2::*;
@@ -14,11 +13,11 @@ pub fn basic_commands_handler() -> MyHandlerType {
                 .filter_command::<BasicCommands>()
                 .endpoint(basic_commands_endpoint),
         )
-        .branch(
-            dptree::entry()
-                .filter_command::<CardCommands>()
-                .endpoint(card_commands_endpoint),
-        )
+        // .branch(
+        //     dptree::entry()
+        //         .filter_command::<CardCommands>()
+        //         .endpoint(card_commands_endpoint),
+        // )
 }
 
 //================MESSAGES REPLIES=====================
