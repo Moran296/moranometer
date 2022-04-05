@@ -52,7 +52,7 @@ impl<'a> PresentListCards {
         let mut buttons = vec![vec![]];
 
         if let Some(cards) = self.cards.as_ref() {
-            for cards in cards.chunks(3) {
+            for cards in cards.chunks(2) {
                 let row = cards
                     .iter()
                     .map(|card| {
