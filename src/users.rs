@@ -9,6 +9,7 @@ use std::{
 use trellolon::{Board, Card, List};
 
 const USERS_FILE: &'static str = "users.json";
+const BOARDS_FILE: &'static str = "boards.json";
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
 struct BoardMap {
@@ -20,7 +21,7 @@ static mut BOARD_MAP: Vec<BoardMap> = vec![];
 
 impl BoardMap {
     async fn load_from_file() {
-        let file = File::options().read(true).open("boards.json");
+        let file = File::options().read(true).open(BOARDS_FILE);
         if file.is_err() {
             panic!();
         }
