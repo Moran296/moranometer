@@ -1,9 +1,10 @@
+use crate::buttonable::Buttonable;
 use crate::inline_callbacks::CallbackCommands;
 use crate::users::User;
 use anyhow::anyhow;
 use teloxide::dispatching2::dialogue::GetChatId;
 use teloxide::prelude2::*;
-use teloxide::types::{InlineKeyboardButton, InlineKeyboardMarkup};
+use teloxide::types::InlineKeyboardMarkup;
 use trellolon::{Board, Component, List};
 
 pub(crate) struct CbPresentLists {
@@ -39,17 +40,8 @@ impl CbPresentLists {
             let row = lists
                 .iter()
                 .map(|list| {
-                    // consider only visible lists, this function cannot be called inside iterator
-                    // if !list.is_visible(self.user) {
-                    //     return None;
-                    // }
-
-                    let callback = serde_json::to_string::<CallbackCommands>(
-                        &CallbackCommands::PresentListsCards(list.id.clone()),
-                    )
-                    .unwrap();
-
-                    InlineKeyboardButton::callback(format!("📜 {}", list.name), callback)
+                    CallbackCommands::PresentListsCards(list.id.clone())
+                        .as_callback(format!("📜 {}", list.name))
                 })
                 .collect();
 

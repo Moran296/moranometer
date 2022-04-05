@@ -1,7 +1,8 @@
+use crate::buttonable::Buttonable;
 use crate::inline_callbacks::CallbackCommands;
 use crate::users::{User, Visible};
 use teloxide::prelude2::*;
-use teloxide::types::{InlineKeyboardButton, InlineKeyboardMarkup};
+use teloxide::types::InlineKeyboardMarkup;
 use trellolon::Card;
 
 const NOTIFIED_EMOJIS: [&'static str; 5] = ["👲🏻", "🧕🏻", "🧛🏻", "🧟🏻", "🧙🏻"];
@@ -56,17 +57,11 @@ impl<'a> CommentNotify<'a> {
 
         let notify = format!("new comment on: {}:\n {}", self.card.name, self.comment);
 
-        let keyboard = InlineKeyboardMarkup::default().append_row(vec![
-            InlineKeyboardButton::callback(
-                " 🕵🏻‍♀️ show card".to_string(),
-                serde_json::to_string(&CallbackCommands::PresentCard(self.card.id.clone()))
-                    .unwrap(),
-            ),
-            InlineKeyboardButton::callback(
-                "🤬 comment".to_string(),
-                serde_json::to_string(&CallbackCommands::CommentCard(self.card.id.clone()))
-                    .unwrap(),
-            ),
+        let keyboard = InlineKeyboardMarkup::new(vec![
+            vec![CallbackCommands::PresentCard(self.card.id.clone())
+                .as_callback("🕵🏻‍♀️ show card".to_string())],
+            vec![CallbackCommands::CommentCard(self.card.id.clone())
+                .as_callback("🤬 comment".to_string())],
         ]);
 
         let mut notifieds = "notified: ".to_string();

@@ -6,6 +6,7 @@ extern crate pretty_env_logger;
 #[macro_use]
 extern crate log;
 
+mod buttonable;
 mod card_commands;
 mod handlers;
 mod inline_callbacks;

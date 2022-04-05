@@ -1,7 +1,7 @@
 use anyhow;
 use async_trait::async_trait;
-use serde::{Deserialize, Serialize};
 use core::panic;
+use serde::{Deserialize, Serialize};
 use std::{
     fs::File,
     io::{Read, Write},
@@ -31,14 +31,12 @@ impl BoardMap {
         file.read_to_string(&mut contents).unwrap();
 
         let boards: Vec<BoardMap> = serde_json::from_str::<Vec<BoardMap>>(&contents).unwrap();
-        unsafe{
+        unsafe {
             BOARD_MAP = boards;
             if BOARD_MAP.is_empty() {
                 panic!();
             }
-
         }
-
 
         ()
     }
@@ -101,7 +99,6 @@ impl Users {
     pub fn get_user(&self, id: i64) -> Option<&User> {
         self.db.iter().find(|user| user.id == id)
     }
-
 }
 
 fn write_to_file(users: &Vec<User>) -> anyhow::Result<()> {
@@ -135,13 +132,11 @@ impl<'a> Visible for BoardId<'a> {
                     }
                 }
             }
-
         }
 
         false
     }
 }
-
 
 #[async_trait]
 impl Visible for Card {

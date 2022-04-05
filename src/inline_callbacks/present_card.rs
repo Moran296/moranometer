@@ -1,10 +1,11 @@
+use crate::buttonable::Buttonable;
 use crate::inline_callbacks::CallbackCommands;
 use crate::users::{User, Visible};
 use anyhow::anyhow;
 use teloxide::dispatching2::dialogue::GetChatId;
 use teloxide::prelude2::*;
 use teloxide::requests::HasPayload;
-use teloxide::types::{InlineKeyboardButton, InlineKeyboardMarkup, ParseMode};
+use teloxide::types::{InlineKeyboardMarkup, ParseMode};
 use trellolon::Card;
 
 pub(crate) struct PresentCard {
@@ -47,23 +48,12 @@ impl<'a> PresentCard {
         }
 
         let keyboard = InlineKeyboardMarkup::default()
-            .append_row(vec![InlineKeyboardButton::callback(
-                "🤬 comment".to_string(),
-                serde_json::to_string(&CallbackCommands::CommentCard(self.card.id.clone()))
-                    .unwrap(),
-            )])
-            .append_row(vec![InlineKeyboardButton::callback(
-                "🚜 back".to_string(),
-                serde_json::to_string(&CallbackCommands::PresentListsCards(
-                    self.card.id_list.clone(),
-                ))
-                .unwrap(),
-            )]);
-        // .append_row(vec![InlineKeyboardButton::callback(
-        //     "archive".to_string(),
-        //     serde_json::to_string(&CallbackCommands::ArchiveCard(self.card.id.clone()))
-        //         .unwrap(),
-        // )]);
+            .append_row(vec![CallbackCommands::CommentCard(self.card.id.clone())
+                .as_callback("🤬 comment".to_string())])
+            .append_row(vec![CallbackCommands::PresentListsCards(
+                self.card.id_list.clone(),
+            )
+            .as_callback("🚜 back".to_string())]);
 
         bot.edit_message_text(
             *self.query.chat_id().as_ref().unwrap(),

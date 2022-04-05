@@ -1,9 +1,10 @@
 use super::comment_notify::CommentNotify;
+use crate::buttonable::Buttonable;
 use crate::inline_callbacks::CallbackCommands;
 use crate::users::{User, Visible};
 use anyhow::anyhow;
 use teloxide::prelude2::*;
-use teloxide::types::{InlineKeyboardButton, InlineKeyboardMarkup};
+use teloxide::types::InlineKeyboardMarkup;
 use teloxide::{prelude::Requester, prelude2::Message};
 use trellolon::Card;
 
@@ -51,10 +52,9 @@ impl<'a> CardComment<'a> {
             .ok_or(anyhow!("could not add comment"))?;
 
         let keyboard =
-            InlineKeyboardMarkup::default().append_row(vec![InlineKeyboardButton::callback(
-                "🚜 back".to_string(),
-                serde_json::to_string(&CallbackCommands::PresentCard(card.id.clone())).unwrap(),
-            )]);
+            InlineKeyboardMarkup::new(vec![vec![
+                CallbackCommands::PresentCard(card.id.clone()).as_callback("🚜 back".to_string())
+            ]]);
 
         bot.send_message(self.user.id, "card commented!")
             .reply_markup(keyboard)

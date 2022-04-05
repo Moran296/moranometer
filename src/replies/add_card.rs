@@ -1,9 +1,10 @@
 use super::created_notify::CreatedNotify;
+use crate::buttonable::Buttonable;
 use crate::inline_callbacks::CallbackCommands;
 use crate::users::User;
 use anyhow::anyhow;
 use teloxide::prelude2::*;
-use teloxide::types::{InlineKeyboardButton, InlineKeyboardMarkup};
+use teloxide::types::InlineKeyboardMarkup;
 use teloxide::{prelude::Requester, prelude2::Message};
 use trellolon::{Card, Creatable, Label, List};
 
@@ -71,16 +72,11 @@ impl<'a> AddCard<'a> {
             .await
             .ok_or(anyhow!("card creation failed"))?;
 
-        let keyboard = InlineKeyboardMarkup::default().append_row(vec![
-            InlineKeyboardButton::callback(
-                " 🕵🏻‍♀️ show card".to_string(),
-                serde_json::to_string(&CallbackCommands::PresentCard(card.id.clone())).unwrap(),
-            ),
-            InlineKeyboardButton::callback(
-                "🚜 back".to_string(),
-                serde_json::to_string(&CallbackCommands::PresentListsCards(self.list.id.clone()))
-                    .unwrap(),
-            ),
+        let keyboard = InlineKeyboardMarkup::new(vec![
+            vec![CallbackCommands::PresentCard(card.id.clone())
+                .as_callback(" 🕵🏻‍♀️ show card".to_owned())],
+            vec![CallbackCommands::PresentListsCards(self.list.id.clone())
+                .as_callback("🚜 back".to_owned())],
         ]);
 
         self.add_label(&card).await?;

@@ -1,13 +1,14 @@
-use crate::Moranometer;
+use crate::{buttonable, Moranometer};
 use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 use serde_json;
-use teloxide::types::ForceReply;
+use teloxide::types::{ForceReply, InlineKeyboardButton};
 use teloxide::{prelude2::*, utils::command::BotCommand};
 
 mod cb_present_lists;
 mod present_card;
 mod present_list_cards;
+use buttonable::Buttonable;
 use cb_present_lists::CbPresentLists as PresentLists;
 use present_card::PresentCard;
 use present_list_cards::PresentListCards;
@@ -28,6 +29,12 @@ pub enum CallbackCommands {
     CommentCard(CardId),
     #[serde(rename = "ac")]
     AddCard(ListId),
+}
+
+impl Buttonable for CallbackCommands {
+    fn as_callback(self, label: String) -> InlineKeyboardButton {
+        InlineKeyboardButton::callback(label, serde_json::to_string(&self).unwrap())
+    }
 }
 
 pub(crate) async fn callback_command_endpoint(

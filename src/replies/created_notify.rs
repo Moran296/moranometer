@@ -1,7 +1,8 @@
+use crate::buttonable::Buttonable;
 use crate::inline_callbacks::CallbackCommands;
 use crate::users::{User, Visible};
 use teloxide::prelude2::*;
-use teloxide::types::{InlineKeyboardButton, InlineKeyboardMarkup};
+use teloxide::types::InlineKeyboardMarkup;
 use trellolon::Card;
 
 const NOTIFIED_EMOJIS: [&'static str; 5] = ["👲🏻", "🧕🏻", "🧛🏻", "🧟🏻", "🧙🏻"];
@@ -49,19 +50,17 @@ impl<'a> CreatedNotify<'a> {
             return Ok(());
         }
 
-        let notify = format!("new card by{}:\n {} ", self.creator.name, self.card.name);
+        let notify = format!(
+            "new card by{user_name}:\n {card_name} ",
+            user_name = self.creator.name,
+            card_name = self.card.name
+        );
 
-        let keyboard = InlineKeyboardMarkup::default().append_row(vec![
-            InlineKeyboardButton::callback(
-                " 🕵🏻‍♀️ show card".to_string(),
-                serde_json::to_string(&CallbackCommands::PresentCard(self.card.id.clone()))
-                    .unwrap(),
-            ),
-            InlineKeyboardButton::callback(
-                "🤬 comment".to_string(),
-                serde_json::to_string(&CallbackCommands::CommentCard(self.card.id.clone()))
-                    .unwrap(),
-            ),
+        let keyboard = InlineKeyboardMarkup::new(vec![
+            vec![CallbackCommands::PresentCard(self.card.id.clone())
+                .as_callback("🕵🏻‍♀️ show card".to_string())],
+            vec![CallbackCommands::CommentCard(self.card.id.clone())
+                .as_callback("🤬 comment".to_string())],
         ]);
 
         let mut notifieds = "notified: ".to_string();
@@ -79,9 +78,7 @@ impl<'a> CreatedNotify<'a> {
         }
 
         log::info!("{notifieds}");
-        bot.send_message(self.creator.id, &notifieds)
-            .send()
-            .await?;
+        bot.send_message(self.creator.id, &notifieds).send().await?;
 
         Ok(())
     }
