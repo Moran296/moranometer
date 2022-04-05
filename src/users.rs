@@ -1,6 +1,7 @@
 use anyhow;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
+use core::panic;
 use std::{
     fs::File,
     io::{Read, Write},
@@ -8,6 +9,39 @@ use std::{
 use trellolon::{Board, Card, Creatable, List};
 
 const USERS_FILE: &'static str = "users.json";
+
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
+struct BoardMap {
+    pub board_name: String,
+    pub board_id: String,
+}
+
+static mut BOARD_MAP: Vec<BoardMap> = vec![];
+
+impl BoardMap {
+    async fn load_from_file() {
+        let file = File::options().read(true).open("boards.json");
+        if file.is_err() {
+            panic!();
+        }
+
+        let mut file = file.unwrap();
+        let mut contents = String::new();
+        file.read_to_string(&mut contents).unwrap();
+
+        let boards: Vec<BoardMap> = serde_json::from_str::<Vec<BoardMap>>(&contents).unwrap();
+        unsafe{
+            BOARD_MAP = boards;
+            if BOARD_MAP.is_empty() {
+                panic!();
+            }
+
+        }
+
+
+        ()
+    }
+}
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
 pub struct User {
@@ -39,6 +73,8 @@ impl Users {
         let mut file = file.unwrap();
         let mut contents = String::new();
 
+        BoardMap::load_from_file().await;
+
         file.read_to_string(&mut contents).unwrap();
         let file_users: Vec<User> = serde_json::from_str::<Vec<User>>(&contents).unwrap();
         users.db = file_users;
@@ -65,15 +101,6 @@ impl Users {
         self.db.iter().find(|user| user.id == id)
     }
 
-    // pub fn get_boards(&self, name: &str) -> Option<Vec<String>> {
-    //     let user = self.db.iter().find(|u| u.name == name)?;
-
-    //     if user.boards.is_empty() {
-    //         return None;
-    //     }
-
-    //     Some(user.boards.clone())
-    // }
 }
 
 fn write_to_file(users: &Vec<User>) -> anyhow::Result<()> {
@@ -94,9 +121,36 @@ pub trait Visible {
     async fn is_visible(&self, user: &User) -> bool;
 }
 
+struct BoardId<'a>(&'a str);
+
+#[async_trait]
+impl<'a> Visible for BoardId<'a> {
+    async fn is_visible(&self, user: &User) -> bool {
+        for visible_board_name in &user.boards {
+            unsafe {
+                for map in BOARD_MAP.iter() {
+                    if visible_board_name == &map.board_name && &self.0 == &map.board_id {
+                        return true;
+                    }
+                }
+            }
+
+        }
+
+        false
+    }
+}
+
+
 #[async_trait]
 impl Visible for Card {
     async fn is_visible(&self, user: &User) -> bool {
+        let is_board_visible = BoardId(&self.id_board).is_visible(user).await;
+
+        if !is_board_visible {
+            return false;
+        }
+
         if user.is_moderator() {
             return true;
         }
@@ -108,21 +162,13 @@ impl Visible for Card {
 #[async_trait]
 impl Visible for Board {
     async fn is_visible(&self, user: &User) -> bool {
-        return user
-            .boards
-            .iter()
-            .any(|board_name| board_name == &self.name);
+        BoardId(&self.id).is_visible(user).await
     }
 }
 
 #[async_trait]
 impl Visible for List {
     async fn is_visible(&self, user: &User) -> bool {
-        let board = self.get_father().await;
-        if let Some(board) = board {
-            board.is_visible(user).await
-        } else {
-            false
-        }
+        BoardId(&self.board_id).is_visible(user).await
     }
 }

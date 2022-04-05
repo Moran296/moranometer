@@ -11,3 +11,4 @@ Cargo.lock
 
 # The users file created by the moranometer
 users.json
+boards.json
