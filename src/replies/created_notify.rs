@@ -8,12 +8,12 @@ const NOTIFIED_EMOJIS: [&'static str; 5] = ["👲🏻", "🧕🏻", "🧛🏻", 
 
 pub(crate) struct CreatedNotify<'a> {
     card: Card,
-    commenter: &'a User,
+    creator: &'a User,
 }
 
 impl<'a> CreatedNotify<'a> {
-    pub fn from(card: Card, commenter: &'a User) -> CreatedNotify<'a> {
-        CreatedNotify { card, commenter }
+    pub fn from(card: Card, creator: &'a User) -> CreatedNotify<'a> {
+        CreatedNotify { card, creator }
     }
 
     async fn get_relevant_users(
@@ -43,13 +43,13 @@ impl<'a> CreatedNotify<'a> {
         bot: &'a AutoSend<Bot>,
         users: &'a Vec<User>,
     ) -> anyhow::Result<()> {
-        let notified_users = Self::get_relevant_users(&users, self.commenter, &self.card).await;
+        let notified_users = Self::get_relevant_users(&users, self.creator, &self.card).await;
         if notified_users.is_empty() {
             log::info!("no users to notify");
             return Ok(());
         }
 
-        let notify = format!("new card by{}:\n {} ", self.card.name, self.card.name);
+        let notify = format!("new card by{}:\n {} ", self.creator.name, self.card.name);
 
         let keyboard = InlineKeyboardMarkup::default().append_row(vec![
             InlineKeyboardButton::callback(
@@ -79,7 +79,7 @@ impl<'a> CreatedNotify<'a> {
         }
 
         log::info!("{notifieds}");
-        bot.send_message(self.commenter.id, &notifieds)
+        bot.send_message(self.creator.id, &notifieds)
             .send()
             .await?;
 
