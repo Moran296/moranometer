@@ -6,6 +6,7 @@ extern crate pretty_env_logger;
 #[macro_use]
 extern crate log;
 
+mod admin_commands;
 mod buttonable;
 mod handlers;
 mod inline_callbacks;
@@ -66,6 +67,7 @@ async fn main() {
 
     let handler = dptree::entry()
         .branch(handlers::basic_commands_handler())
+        .branch(handlers::admin_commands_handler())
         .branch(handlers::callbacks_handler())
         .branch(handlers::reply_message_handler());
 

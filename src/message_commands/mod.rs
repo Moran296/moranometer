@@ -1,3 +1,4 @@
+use crate::admin_commands::AdminCommands;
 use crate::Moranometer;
 use anyhow::anyhow;
 use teloxide::{prelude2::*, utils::command::BotCommand};
@@ -36,6 +37,12 @@ pub(crate) async fn basic_commands_endpoint(
             bot.send_message(user_id, BasicCommands::descriptions())
                 .send()
                 .await?;
+
+            if user.is_moderator() {
+                bot.send_message(user_id, AdminCommands::descriptions())
+                    .send()
+                    .await?;
+            }
         }
 
         BasicCommands::Start => {

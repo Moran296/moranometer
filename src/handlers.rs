@@ -7,17 +7,21 @@ use teloxide::types::Message;
 use crate::message_commands::*;
 
 pub fn basic_commands_handler() -> MyHandlerType {
-    Update::filter_message()
-        .branch(
-            dptree::entry()
-                .filter_command::<BasicCommands>()
-                .endpoint(basic_commands_endpoint),
-        )
-        // .branch(
-        //     dptree::entry()
-        //         .filter_command::<CardCommands>()
-        //         .endpoint(card_commands_endpoint),
-        // )
+    Update::filter_message().branch(
+        dptree::entry()
+            .filter_command::<BasicCommands>()
+            .endpoint(basic_commands_endpoint),
+    )
+}
+
+use crate::admin_commands::*;
+
+pub fn admin_commands_handler() -> MyHandlerType {
+    Update::filter_message().branch(
+        dptree::entry()
+            .filter_command::<AdminCommands>()
+            .endpoint(admin_commands_endpoint),
+    )
 }
 
 //================MESSAGES REPLIES=====================
