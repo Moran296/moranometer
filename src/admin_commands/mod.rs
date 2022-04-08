@@ -3,6 +3,7 @@ use crate::Moranometer;
 use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 use teloxide::{prelude2::*, utils::command::BotCommand};
+use tokio::spawn;
 
 #[derive(Debug, BotCommand, Clone, Serialize, Deserialize)]
 #[command(rename = "lowercase", description = "admin commands")]
@@ -42,8 +43,11 @@ pub(crate) async fn admin_commands_endpoint(
         }
 
         AdminCommands::Exit => {
-            bot.send_message(user.id, "Exiting").send().await?;
-            std::process::exit(0);
+            bot.send_message(user.id, "Exiting....").send().await?;
+            spawn(async move {
+                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                std::process::exit(0);
+            });
         }
     }
 
