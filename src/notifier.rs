@@ -101,7 +101,9 @@ impl Notifier {
                 to_send = to_send.reply_markup(keyboard.clone());
             }
 
-            to_send.send().await?;
+            tokio::spawn(async move {
+                to_send.send().await.unwrap();
+            });
         }
 
         if let Some(source_user) = &self.source_user {
