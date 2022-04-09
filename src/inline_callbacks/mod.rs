@@ -2,7 +2,7 @@ use crate::{buttonable, Moranometer};
 use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 use serde_json;
-use teloxide::types::{ForceReply, InlineKeyboardButton};
+use teloxide::types::{ForceReply, InlineKeyboardButton, InlineKeyboardMarkup};
 use teloxide::{prelude2::*, utils::command::BotCommand};
 
 mod cb_present_lists;
@@ -124,17 +124,22 @@ pub(crate) async fn callback_command_endpoint(
         }
 
         CallbackCommands::MoveToDone(card_id) => {
-            let card = MoveToDone::new(&card_id)
-            .await?
-            .execute()
-            .await?;
+            let notify = MoveToDone::new(&card_id).await?.execute().await?;
+            let msg = format!("card '{}' marked as done", notify.card_name());
 
-            bot.send_message(
-                user.id,
-                format!("card '{name}' moved to done", name = card.name),
-            )
-            .send()
-            .await?;
+
+            let keyboard = InlineKeyboardMarkup::new(vec![vec![
+                    CallbackCommands::PresentCard(card_id.clone())
+                        .as_callback("🕵🏻‍♀️ show card".to_string()),
+                ]]);
+
+            bot.send_message(user.id, "card moved!").send().await?;
+            notify
+                .for_users(&users.db, user)
+                .await
+                .with_keyboard(keyboard)
+                .execute(&bot, &msg)
+                .await?;
         }
     };
 

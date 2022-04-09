@@ -11,6 +11,7 @@ mod buttonable;
 mod handlers;
 mod inline_callbacks;
 mod message_commands;
+mod notifier;
 mod replies;
 mod users;
 

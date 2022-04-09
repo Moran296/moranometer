@@ -1,3 +1,4 @@
+use crate::notifier::NotifyOn;
 use anyhow::anyhow;
 use trellolon::{Card, Component};
 
@@ -14,8 +15,10 @@ impl MoveToDone {
         })
     }
 
-    pub async fn execute(self) -> anyhow::Result<Card> {
-        let board = self.card.get_board()
+    pub async fn execute(self) -> anyhow::Result<NotifyOn> {
+        let board = self
+            .card
+            .get_board()
             .await
             .ok_or(anyhow!("board cant be found"))?;
         let done = board
@@ -28,6 +31,6 @@ impl MoveToDone {
             .await
             .ok_or(anyhow!("card cant be moved"))?;
 
-        Ok(card)
+        Ok(NotifyOn::MovedToDone(card))
     }
 }
