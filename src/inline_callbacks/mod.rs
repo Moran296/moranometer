@@ -127,11 +127,10 @@ pub(crate) async fn callback_command_endpoint(
             let notify = MoveToDone::new(&card_id).await?.execute().await?;
             let msg = format!("card '{}' marked as done", notify.card_name());
 
-
-            let keyboard = InlineKeyboardMarkup::new(vec![vec![
-                    CallbackCommands::PresentCard(card_id.clone())
-                        .as_callback("🕵🏻‍♀️ show card".to_string()),
-                ]]);
+            let keyboard = InlineKeyboardMarkup::new(vec![vec![CallbackCommands::PresentCard(
+                card_id.clone(),
+            )
+            .as_callback("🕵🏻‍♀️ show card".to_string())]]);
 
             bot.send_message(user.id, "card moved!").send().await?;
             notify

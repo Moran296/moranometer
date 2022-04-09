@@ -1,6 +1,6 @@
-use super::created_notify::CreatedNotify;
 use crate::buttonable::Buttonable;
 use crate::inline_callbacks::CallbackCommands;
+use crate::notifier::*;
 use crate::users::User;
 use anyhow::anyhow;
 use teloxide::prelude2::*;
@@ -59,7 +59,38 @@ impl<'a> AddCard<'a> {
         Ok(())
     }
 
-    pub async fn execute(self, bot: &'a AutoSend<Bot>) -> anyhow::Result<CreatedNotify<'a>> {
+    async fn notify(
+        users: &Vec<User>,
+        user: &User,
+        bot: &'a AutoSend<Bot>,
+        card: Card,
+    ) -> anyhow::Result<()> {
+        let notify = format!(
+            "new card by{user_name}:\n {card_name} ",
+            user_name = user.name,
+            card_name = card.name
+        );
+
+        let notified_keyboard = InlineKeyboardMarkup::new(vec![
+            vec![CallbackCommands::PresentCard(card.id.clone())
+                .as_callback("🕵🏻‍♀️ show card".to_string())],
+            vec![CallbackCommands::CommentCard(card.id.clone())
+                .as_callback("🤬 comment".to_string())],
+        ]);
+
+        log::info!("comment added to card");
+
+        NotifyOn::Create(card.clone())
+            .for_users(users, user)
+            .await
+            .with_keyboard(notified_keyboard)
+            .execute(bot, &notify)
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn execute(self, users: &Vec<User>, bot: &'a AutoSend<Bot>) -> anyhow::Result<()> {
         let mut lines = self.card_txt.lines();
         let title = lines.next().ok_or(anyhow!("no title"))?;
         let description = lines.collect::<String>();
@@ -87,6 +118,6 @@ impl<'a> AddCard<'a> {
             .await?;
 
         log::info!("card added");
-        Ok(CreatedNotify::from(card, self.user))
+        Self::notify(users, self.user, bot, card).await
     }
 }

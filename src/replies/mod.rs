@@ -6,8 +6,6 @@ mod add_card;
 mod card_comment;
 use add_card::AddCard;
 use card_comment::CardComment;
-mod comment_notify;
-mod created_notify;
 
 pub(crate) async fn reply_message_endpoint(
     msg: Message,
@@ -23,18 +21,10 @@ pub(crate) async fn reply_message_endpoint(
 
     if let Some(card_comment) = CardComment::from(&msg, &user).await {
         log::info!("commenting on card {card_comment:?}");
-        card_comment
-            .execute(&bot)
-            .await?
-            .execute(&bot, &users.db)
-            .await?;
+        card_comment.execute(&users.db, &bot).await?
     } else if let Some(add_card) = AddCard::from(&msg, &user).await {
         log::info!("add card {add_card:?}");
-        add_card
-            .execute(&bot)
-            .await?
-            .execute(&bot, &users.db)
-            .await?;
+        add_card.execute(&users.db, &bot).await?
     } else {
         anyhow::bail!("unhadled reply");
     }

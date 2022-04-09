@@ -2,9 +2,11 @@ use crate::users::{User, Visible};
 use anyhow::Result;
 use teloxide::prelude2::*;
 use teloxide::types::InlineKeyboardMarkup;
-use trellolon::{Card};
+use trellolon::Card;
 
 const NOTIFIED_EMOJIS: [&'static str; 5] = ["👲🏻", "🧕🏻", "🧛🏻", "🧟🏻", "🧙🏻"];
+
+#[derive(Debug)]
 pub(crate) enum NotifyOn {
     Comment(Card),
     Create(Card),
@@ -45,14 +47,13 @@ impl NotifyOn {
             }
             NotifyOn::MovedToDone(card) => {
                 users.extend(get_relevant_users(all_users, source_user, &card).await)
-            }
-            // NotifyOn::LabelAdded(card, label) => {
-            //     users.extend(get_relevant_users(all_users, source_user, &card).await);
-            //     users = users
-            //         .into_iter()
-            //         .filter(|user| user.name == label.name)
-            //         .collect();
-            // }
+            } // NotifyOn::LabelAdded(card, label) => {
+              //     users.extend(get_relevant_users(all_users, source_user, &card).await);
+              //     users = users
+              //         .into_iter()
+              //         .filter(|user| user.name == label.name)
+              //         .collect();
+              // }
         }
 
         Notifier::new(users, Some(source_user.clone()), None)
@@ -68,8 +69,16 @@ impl NotifyOn {
 }
 
 impl Notifier {
-    pub fn new(users: Vec<User>, source_user: Option<User>, keyboard: Option<InlineKeyboardMarkup>) -> Notifier {
-        Notifier { users, source_user, keyboard }
+    pub fn new(
+        users: Vec<User>,
+        source_user: Option<User>,
+        keyboard: Option<InlineKeyboardMarkup>,
+    ) -> Notifier {
+        Notifier {
+            users,
+            source_user,
+            keyboard,
+        }
     }
 
     pub fn with_keyboard(mut self, keyboard: InlineKeyboardMarkup) -> Notifier {
@@ -80,6 +89,9 @@ impl Notifier {
     pub async fn execute(&self, bot: &AutoSend<Bot>, msg: &str) -> Result<()> {
         let mut notifieds = "notified: ".to_string();
         let mut i = 0;
+
+        log::info!("notifying {} users", self.users.len());
+
         for user in &self.users {
             notifieds.push_str(&format!("\n{} - {}, ", NOTIFIED_EMOJIS[i], user.name));
             i = i + 1 % NOTIFIED_EMOJIS.len();
@@ -96,7 +108,9 @@ impl Notifier {
             if self.users.len() > 0 {
                 bot.send_message(source_user.id, &notifieds).send().await?;
             } else {
-                bot.send_message(source_user.id, "no one to notify..").send().await?;
+                bot.send_message(source_user.id, "no one to notify..")
+                    .send()
+                    .await?;
             }
         }
 
