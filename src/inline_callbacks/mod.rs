@@ -6,10 +6,12 @@ use teloxide::types::{ForceReply, InlineKeyboardButton};
 use teloxide::{prelude2::*, utils::command::BotCommand};
 
 mod cb_present_lists;
+mod move_to_done;
 mod present_card;
 mod present_list_cards;
 use buttonable::Buttonable;
 use cb_present_lists::CbPresentLists as PresentLists;
+use move_to_done::MoveToDone;
 use present_card::PresentCard;
 use present_list_cards::PresentListCards;
 
@@ -29,6 +31,9 @@ pub enum CallbackCommands {
     CommentCard(CardId),
     #[serde(rename = "ac")]
     AddCard(ListId),
+    //admin commands
+    #[serde(rename = "md")]
+    MoveToDone(CardId),
 }
 
 impl Buttonable for CallbackCommands {
@@ -116,6 +121,20 @@ pub(crate) async fn callback_command_endpoint(
                 )
                 .send()
                 .await?;
+        }
+
+        CallbackCommands::MoveToDone(card_id) => {
+            let card = MoveToDone::new(&card_id)
+            .await?
+            .execute()
+            .await?;
+
+            bot.send_message(
+                user.id,
+                format!("card '{name}' moved to done", name = card.name),
+            )
+            .send()
+            .await?;
         }
     };
 

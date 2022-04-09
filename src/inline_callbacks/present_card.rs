@@ -1,5 +1,5 @@
 use crate::buttonable::Buttonable;
-use crate::inline_callbacks::CallbackCommands;
+use crate::inline_callbacks::CallbackCommands::*;
 use crate::users::{User, Visible};
 use anyhow::anyhow;
 use teloxide::dispatching2::dialogue::GetChatId;
@@ -11,6 +11,7 @@ use trellolon::Card;
 pub(crate) struct PresentCard {
     card: Card,
     query: CallbackQuery,
+    is_moderator: bool,
 }
 
 impl<'a> PresentCard {
@@ -26,7 +27,11 @@ impl<'a> PresentCard {
             anyhow::bail!("card is not visible to user");
         }
 
-        Ok(Self { card, query })
+        Ok(Self {
+            card,
+            query,
+            is_moderator: user.is_moderator(),
+        })
     }
 
     pub async fn execute(&self, bot: &AutoSend<Bot>) -> anyhow::Result<()> {
@@ -47,13 +52,21 @@ impl<'a> PresentCard {
             card_str.push_str(&format!("👉🏽 <em> {}</em> \n", comment));
         }
 
-        let keyboard = InlineKeyboardMarkup::default()
-            .append_row(vec![CallbackCommands::CommentCard(self.card.id.clone())
-                .as_callback("🤬 comment".to_string())])
-            .append_row(vec![CallbackCommands::PresentListsCards(
-                self.card.id_list.clone(),
-            )
-            .as_callback("🚜 back".to_string())]);
+        let mut keyboard = InlineKeyboardMarkup::default()
+            .append_row(vec![
+                CommentCard(self.card.id.clone()).as_callback("🤬 comment".to_string())
+            ])
+            .append_row(vec![
+                PresentListsCards(self.card.id_list.clone()).as_callback("🚜 back".to_string())
+            ]);
+
+        keyboard = if self.is_moderator {
+            keyboard.append_row(vec![
+                MoveToDone(self.card.id.clone()).as_callback("😍 mark as done".to_string())
+            ])
+        } else {
+            keyboard
+        };
 
         bot.edit_message_text(
             *self.query.chat_id().as_ref().unwrap(),
