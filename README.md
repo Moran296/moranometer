@@ -33,7 +33,7 @@ for example:
 
 Moran has access to three boards: TestBoard, Moranometer and 宝宝们.
 Name and boards can be changed freely but notice that changing the id will cause the moranometer to lose access to the user.
-Every new user contacting the moranometer bot will be added to the file.
+Every new user contacting the moranometer bot will be added to the file (according to the user's id).
 
 
 
