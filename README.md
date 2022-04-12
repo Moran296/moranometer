@@ -40,5 +40,4 @@ Every new user contacting the moranometer bot will be added to the file (accordi
 ## TODO:
 * Hash boards and boards id in a database instead of using  a json file.
 * Seperate moderator to board moderator and admin and add field in user (and json) to indicate the permissions.
-* Add add/remove label function for moderators
 * Write documentation for using own moranometer.

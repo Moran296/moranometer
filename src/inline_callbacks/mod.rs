@@ -2,24 +2,28 @@ use crate::{buttonable, Moranometer};
 use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 use serde_json;
+use teloxide::prelude2::*;
 use teloxide::types::{ForceReply, InlineKeyboardButton, InlineKeyboardMarkup};
-use teloxide::{prelude2::*, utils::command::BotCommand};
 
+mod add_label;
 mod cb_present_lists;
 mod move_to_done;
 mod present_card;
 mod present_list_cards;
+mod show_labels;
+use add_label::AddLabel;
 use buttonable::Buttonable;
 use cb_present_lists::CbPresentLists as PresentLists;
 use move_to_done::MoveToDone;
 use present_card::PresentCard;
 use present_list_cards::PresentListCards;
+use show_labels::ShowLabels;
 
 type CardId = String;
 type ListId = String;
+type LabelId = String;
 
-#[derive(Debug, BotCommand, Clone, Serialize, Deserialize)]
-#[command(rename = "lowercase", description = "These commands are supported:")]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum CallbackCommands {
     #[serde(rename = "pl")]
     PresentLists,
@@ -34,6 +38,10 @@ pub enum CallbackCommands {
     //admin commands
     #[serde(rename = "md")]
     MoveToDone(CardId),
+    #[serde(rename = "sl")]
+    ShowLabels(CardId),
+    #[serde(rename = "al")]
+    AddLabel(CardId, LabelId),
 }
 
 impl Buttonable for CallbackCommands {
@@ -138,6 +146,20 @@ pub(crate) async fn callback_command_endpoint(
                 .await
                 .with_keyboard(keyboard)
                 .execute(&bot, &msg)
+                .await?;
+        }
+
+        CallbackCommands::ShowLabels(card_id) => {
+            ShowLabels::new(callback, card_id)
+                .await?
+                .execute(&bot, &user)
+                .await?;
+        }
+
+        CallbackCommands::AddLabel(card_id, label_id) => {
+            AddLabel::new(callback, card_id, label_id)
+                .await?
+                .execute(&bot)
                 .await?;
         }
     };

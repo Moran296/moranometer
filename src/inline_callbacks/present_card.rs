@@ -61,9 +61,13 @@ impl<'a> PresentCard {
             ]);
 
         keyboard = if self.is_moderator {
-            keyboard.append_row(vec![
-                MoveToDone(self.card.id.clone()).as_callback("😍 mark as done".to_string())
-            ])
+            keyboard
+                .append_row(vec![
+                    MoveToDone(self.card.id.clone()).as_callback("😍 mark as done".to_string())
+                ])
+                .append_row(vec![
+                    ShowLabels(self.card.id.clone()).as_callback("👹 Add label".to_string())
+                ])
         } else {
             keyboard
         };
