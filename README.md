@@ -25,19 +25,28 @@ for example:
 
     [
         {
-            "name":"Moran",
-            "id":1453903430,
-            "boards":["TestBoard","Moranometer", "宝宝们"]
+            "name": "Moran",
+            "admin": true,
+            "id": 1453903430,
+            "boards": {
+                "TestBoard": "moderator",
+                "Moranometer": "by_label",
+                "宝宝们": "see_all"
+            }
         }
     ]
 
-Moran has access to three boards: TestBoard, Moranometer and 宝宝们.
+Moran is the admin, he has access to three boards: TestBoard, Moranometer and 宝宝们.
+There are three level for permissions: 
+by_label: can see only cards labeld on his name, comment and add.
+see_all: can see all cards in a board, comment and add.
+moderator: like see_all + can move cards to 'Done' kist and add labels to cards
+
 Name and boards can be changed freely but notice that changing the id will cause the moranometer to lose access to the user.
-Every new user contacting the moranometer bot will be added to the file (according to the user's id).
+Every new user contacting the moranometer bot will be added to the file (according to the user's id) with the default permissions.
 
 
 
 ## TODO:
 * Hash boards and boards id in a database instead of using  a json file.
-* Seperate moderator to board moderator and admin and add field in user (and json) to indicate the permissions.
 * Write documentation for using own moranometer.

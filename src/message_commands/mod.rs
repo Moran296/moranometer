@@ -38,7 +38,7 @@ pub(crate) async fn basic_commands_endpoint(
                 .send()
                 .await?;
 
-            if user.is_moderator() {
+            if user.is_admin() {
                 bot.send_message(user_id, AdminCommands::descriptions())
                     .send()
                     .await?;

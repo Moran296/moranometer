@@ -16,8 +16,8 @@ impl CbPresentLists {
     pub async fn new(user: &User, query: CallbackQuery) -> anyhow::Result<CbPresentLists> {
         let mut lists = vec![];
 
-        for board in &user.boards {
-            let board = Board::get(&board)
+        for (board_name, _) in &user.boards {
+            let board = Board::get(board_name)
                 .await
                 .ok_or(anyhow!("failed retrieving board"))?;
             let new_lists = board.get_all().await;

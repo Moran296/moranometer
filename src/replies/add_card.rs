@@ -1,7 +1,7 @@
 use crate::buttonable::Buttonable;
 use crate::inline_callbacks::CallbackCommands;
 use crate::notifier::*;
-use crate::users::User;
+use crate::users::{BoardPermission, User};
 use anyhow::anyhow;
 use teloxide::prelude2::*;
 use teloxide::types::InlineKeyboardMarkup;
@@ -40,10 +40,6 @@ impl<'a> AddCard<'a> {
     }
 
     async fn add_label(&self, card: &Card) -> anyhow::Result<()> {
-        if self.user.is_moderator() {
-            return Ok(());
-        }
-
         let labels = Label::get_from_board(&card.id_board).await;
         if let Some(labels) = labels {
             if let Some(label) = labels.iter().find(|l| l.name == self.user.name) {
@@ -110,7 +106,16 @@ impl<'a> AddCard<'a> {
                 .as_callback("🚜 back".to_owned())],
         ]);
 
-        self.add_label(&card).await?;
+        let permission = self
+            .user
+            .get_permission(&card.id_board)
+            .ok_or(anyhow!("no permission to see this board"))?;
+
+        match permission {
+            BoardPermission::Moderator => (),
+            BoardPermission::SeeAll => (),
+            BoardPermission::ByLabel => self.add_label(&card).await?,
+        }
 
         bot.send_message(self.user.id, "card created!")
             .reply_markup(keyboard)

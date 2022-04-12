@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use core::panic;
 use serde::{Deserialize, Serialize};
 use std::{
+    collections::HashMap,
     fs::File,
     io::{Read, Write},
 };
@@ -40,18 +41,54 @@ impl BoardMap {
 
         ()
     }
+
+    pub fn id_to_name(id: &str) -> Option<String> {
+        for board in unsafe { &BOARD_MAP } {
+            if board.board_id == id {
+                return Some(board.board_name.clone());
+            }
+        }
+
+        None
+    }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum BoardPermission {
+    Moderator,
+    SeeAll,
+    ByLabel,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct User {
     pub name: String,
     pub id: i64,
-    pub boards: Vec<String>,
+    pub admin: bool,
+    pub boards: HashMap<String, BoardPermission>,
 }
 
 impl User {
-    pub fn is_moderator(&self) -> bool {
-        self.name == "Moran" || self.name == "Jenny"
+    pub fn is_admin(&self) -> bool {
+        self.admin
+    }
+
+    pub fn is_moderator(&self, board_id: &str) -> bool {
+        if let Some(BoardPermission::Moderator) = self.get_permission(board_id) {
+            return true;
+        }
+
+        false
+    }
+
+    pub fn get_permission(&self, board_id: &str) -> Option<BoardPermission> {
+        let name = BoardMap::id_to_name(board_id);
+        if let Some(name) = name {
+            self.boards.get(&name).cloned()
+        } else {
+            None
+        }
     }
 }
 
@@ -83,10 +120,14 @@ impl Users {
 
     pub async fn add(&mut self, name: &str, id: i64) -> anyhow::Result<()> {
         if !self.db.iter().any(|user| user.id == id) {
+            let mut map = HashMap::new();
+            map.insert("TestBoard".to_string(), BoardPermission::SeeAll);
+
             let user = User {
                 name: name.to_owned(),
                 id: id,
-                boards: vec!["TestBoard".to_owned()],
+                admin: false,
+                boards: map,
             };
 
             self.db.push(user.clone());
@@ -122,49 +163,30 @@ pub trait Visible {
 struct BoardId<'a>(&'a str);
 
 #[async_trait]
-impl<'a> Visible for BoardId<'a> {
-    async fn is_visible(&self, user: &User) -> bool {
-        for visible_board_name in &user.boards {
-            unsafe {
-                for map in BOARD_MAP.iter() {
-                    if visible_board_name == &map.board_name && &self.0 == &map.board_id {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        false
-    }
-}
-
-#[async_trait]
 impl Visible for Card {
     async fn is_visible(&self, user: &User) -> bool {
-        let is_board_visible = BoardId(&self.id_board).is_visible(user).await;
-
-        if !is_board_visible {
-            return false;
+        if let Some(permission) = user.get_permission(&self.id_board) {
+            match permission {
+                BoardPermission::Moderator => true,
+                BoardPermission::SeeAll => true,
+                BoardPermission::ByLabel => self.labels.iter().any(|label| label.name == user.name),
+            }
+        } else {
+            false
         }
-
-        if user.is_moderator() {
-            return true;
-        }
-
-        self.labels.iter().any(|label| label.name == user.name)
     }
 }
 
 #[async_trait]
 impl Visible for Board {
     async fn is_visible(&self, user: &User) -> bool {
-        BoardId(&self.id).is_visible(user).await
+        user.get_permission(&self.id).is_some()
     }
 }
 
 #[async_trait]
 impl Visible for List {
     async fn is_visible(&self, user: &User) -> bool {
-        BoardId(&self.board_id).is_visible(user).await
+        user.get_permission(&self.board_id).is_some()
     }
 }

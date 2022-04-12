@@ -31,8 +31,8 @@ pub(crate) async fn admin_commands_endpoint(
     cfg: Moranometer,
 ) -> anyhow::Result<()> {
     let user = get_user(&msg, &cfg).await?;
-    if !user.is_moderator() {
-        return Err(anyhow!("You are not a moderator"));
+    if !user.is_admin() {
+        return Err(anyhow!("You are not a admin"));
     }
 
     match cmd {

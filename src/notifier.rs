@@ -24,7 +24,7 @@ async fn get_relevant_users(all_users: &Vec<User>, source_user: &User, card: &Ca
     let mut users = Vec::new();
 
     for user in all_users {
-        if !card.is_visible(user).await || user == source_user {
+        if !card.is_visible(user).await || user.id == source_user.id {
             continue;
         }
 

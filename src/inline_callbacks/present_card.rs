@@ -27,10 +27,12 @@ impl<'a> PresentCard {
             anyhow::bail!("card is not visible to user");
         }
 
+        let is_moderator = user.is_moderator(&card.id_board);
+
         Ok(Self {
             card,
             query,
-            is_moderator: user.is_moderator(),
+            is_moderator,
         })
     }
 

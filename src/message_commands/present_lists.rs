@@ -15,8 +15,8 @@ impl<'a> PresentLists<'a> {
     pub async fn new(user: &'a User) -> anyhow::Result<PresentLists<'a>> {
         let mut lists = vec![];
 
-        for board in &user.boards {
-            let board = Board::get(&board)
+        for (board_name, _) in &user.boards {
+            let board = Board::get(board_name)
                 .await
                 .ok_or(anyhow!("failed retrieving board"))?;
             let new_lists = board.get_all().await;
