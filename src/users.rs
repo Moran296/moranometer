@@ -160,8 +160,6 @@ pub trait Visible {
     async fn is_visible(&self, user: &User) -> bool;
 }
 
-struct BoardId<'a>(&'a str);
-
 #[async_trait]
 impl Visible for Card {
     async fn is_visible(&self, user: &User) -> bool {
