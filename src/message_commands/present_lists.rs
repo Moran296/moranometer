@@ -1,6 +1,6 @@
-use crate::buttonable::Buttonable;
 use crate::inline_callbacks::CallbackCommands;
 use crate::users::User;
+use crate::{buttonable::Buttonable, users::Visible};
 use anyhow::anyhow;
 use teloxide::prelude2::*;
 use teloxide::types::InlineKeyboardMarkup;
@@ -15,18 +15,21 @@ impl<'a> PresentLists<'a> {
     pub async fn new(user: &'a User) -> anyhow::Result<PresentLists<'a>> {
         let mut lists = vec![];
 
-        for (board_name, _) in &user.boards {
-            let board = Board::get(board_name)
-                .await
-                .ok_or(anyhow!("failed retrieving board"))?;
-            let new_lists = board.get_all().await;
-            if let Some(new_lists) = new_lists {
-                lists.extend(new_lists);
+        let boards = Board::get_all_boards()
+            .await
+            .ok_or(anyhow!("no boards found for user {}", user.name))?;
+        for board in boards {
+            if !board.is_visible(user).await {
+                continue;
+            }
+
+            if let Some(lists_) = board.get_all().await {
+                lists.extend(lists_.into_iter());
             }
         }
 
         if lists.is_empty() {
-            anyhow::bail!("no lists found");
+            anyhow::bail!("no lists found for user {}", user.name);
         }
 
         Ok(PresentLists { user, lists })
