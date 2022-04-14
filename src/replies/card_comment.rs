@@ -48,7 +48,7 @@ impl<'a> CardComment<'a> {
         user: &User,
         bot: &'a AutoSend<Bot>,
         card: Card,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<String> {
         let notified_keyboard = InlineKeyboardMarkup::new(vec![
             vec![CallbackCommands::PresentCard(card.id.clone())
                 .as_callback("🕵🏻‍♀️ show card".to_string())],
@@ -63,9 +63,7 @@ impl<'a> CardComment<'a> {
             .await
             .with_keyboard(notified_keyboard)
             .execute(bot, &format!("{} commented on: {}", user.name, card.name))
-            .await?;
-
-        Ok(())
+            .await
     }
 
     pub async fn execute(self, users: &Vec<User>, bot: &'a AutoSend<Bot>) -> anyhow::Result<()> {
@@ -81,11 +79,14 @@ impl<'a> CardComment<'a> {
                 CallbackCommands::PresentCard(card.id.clone()).as_callback("🚜 back".to_string())
             ]]);
 
-        bot.send_message(self.user.id, "card commented!")
+        let notifieds = Self::notify(users, self.user, bot, card).await?;
+        let msg = format!("card commented!\n{notifieds}");
+
+        bot.send_message(self.user.id, msg)
             .reply_markup(keyboard)
             .send()
             .await?;
 
-        Self::notify(users, self.user, bot, card).await
+        Ok(())
     }
 }

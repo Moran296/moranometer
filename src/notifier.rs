@@ -47,13 +47,7 @@ impl NotifyOn {
             }
             NotifyOn::MovedToDone(card) => {
                 users.extend(get_relevant_users(all_users, source_user, &card).await)
-            } // NotifyOn::LabelAdded(card, label) => {
-              //     users.extend(get_relevant_users(all_users, source_user, &card).await);
-              //     users = users
-              //         .into_iter()
-              //         .filter(|user| user.name == label.name)
-              //         .collect();
-              // }
+            }
         }
 
         Notifier::new(users, Some(source_user.clone()), None)
@@ -86,7 +80,7 @@ impl Notifier {
         self
     }
 
-    pub async fn execute(&self, bot: &AutoSend<Bot>, msg: &str) -> Result<()> {
+    pub async fn execute(&self, bot: &AutoSend<Bot>, msg: &str) -> Result<String> {
         let mut notifieds = "notified: ".to_string();
         let mut i = 0;
 
@@ -106,16 +100,6 @@ impl Notifier {
             });
         }
 
-        if let Some(source_user) = &self.source_user {
-            if self.users.len() > 0 {
-                bot.send_message(source_user.id, &notifieds).send().await?;
-            } else {
-                bot.send_message(source_user.id, "no one to notify..")
-                    .send()
-                    .await?;
-            }
-        }
-
-        Ok(())
+        Ok(notifieds)
     }
 }

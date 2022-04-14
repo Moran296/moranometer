@@ -60,7 +60,7 @@ impl<'a> AddCard<'a> {
         user: &User,
         bot: &'a AutoSend<Bot>,
         card: Card,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<String> {
         let notify = format!(
             "new card by{user_name}:\n {card_name} ",
             user_name = user.name,
@@ -81,9 +81,7 @@ impl<'a> AddCard<'a> {
             .await
             .with_keyboard(notified_keyboard)
             .execute(bot, &notify)
-            .await?;
-
-        Ok(())
+            .await
     }
 
     pub async fn execute(self, users: &Vec<User>, bot: &'a AutoSend<Bot>) -> anyhow::Result<()> {
@@ -118,12 +116,15 @@ impl<'a> AddCard<'a> {
             BoardPermission::ByLabel => self.add_label(&card).await?,
         }
 
-        bot.send_message(self.user.id, "card created!")
+        let notifieds = Self::notify(users, self.user, bot, card).await?;
+        let msg = format!("📋 card created!\n{notifieds}");
+
+        bot.send_message(self.user.id, msg)
             .reply_markup(keyboard)
             .send()
             .await?;
 
         log::info!("card added");
-        Self::notify(users, self.user, bot, card).await
+        Ok(())
     }
 }
