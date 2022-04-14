@@ -109,6 +109,7 @@ impl<'a> AddCard<'a> {
         let permission = self
             .user
             .get_permission(&card.id_board)
+            .await
             .ok_or(anyhow!("no permission to see this board"))?;
 
         match permission {

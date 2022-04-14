@@ -1,51 +1,42 @@
 use anyhow;
 use async_trait::async_trait;
-use core::panic;
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     fs::File,
     io::{Read, Write},
 };
+use tokio::sync::Mutex;
 use trellolon::{Board, Card, List};
 
 const USERS_FILE: &'static str = "users.json";
-const BOARDS_FILE: &'static str = "boards.json";
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
-struct BoardMap {
-    pub board_name: String,
-    pub board_id: String,
+struct BoardMap {}
+
+lazy_static! {
+    static ref BOARD_MAP: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
 }
 
-static mut BOARD_MAP: Vec<BoardMap> = vec![];
-
 impl BoardMap {
-    async fn load_from_file() {
-        let file = File::options().read(true).open(BOARDS_FILE);
-        if file.is_err() {
-            panic!();
+    pub async fn load() {
+        let mut board_map = BOARD_MAP.lock().await;
+        let boards = Board::get_all_boards().await.unwrap();
+
+        for board in boards {
+            board_map.insert(board.id, board.name);
         }
-
-        let mut file = file.unwrap();
-        let mut contents = String::new();
-        file.read_to_string(&mut contents).unwrap();
-
-        let boards: Vec<BoardMap> = serde_json::from_str::<Vec<BoardMap>>(&contents).unwrap();
-        unsafe {
-            BOARD_MAP = boards;
-            if BOARD_MAP.is_empty() {
-                panic!();
-            }
-        }
-
-        ()
     }
 
-    pub fn id_to_name(id: &str) -> Option<String> {
-        for board in unsafe { &BOARD_MAP } {
-            if board.board_id == id {
-                return Some(board.board_name.clone());
+    pub async fn id_to_name(id: &str) -> Option<String> {
+        let mut board_map = BOARD_MAP.lock().await;
+        if let Some(name) = board_map.get(id) {
+            return Some(name.clone());
+        } else {
+            if let Some(board) = Board::get_by_id(id).await {
+                board_map.insert(board.id, board.name.clone());
+                return Some(board.name);
             }
         }
 
@@ -74,16 +65,16 @@ impl User {
         self.admin
     }
 
-    pub fn is_moderator(&self, board_id: &str) -> bool {
-        if let Some(BoardPermission::Moderator) = self.get_permission(board_id) {
+    pub async fn is_moderator(&self, board_id: &str) -> bool {
+        if let Some(BoardPermission::Moderator) = self.get_permission(board_id).await {
             return true;
         }
 
         false
     }
 
-    pub fn get_permission(&self, board_id: &str) -> Option<BoardPermission> {
-        let name = BoardMap::id_to_name(board_id);
+    pub async fn get_permission(&self, board_id: &str) -> Option<BoardPermission> {
+        let name = BoardMap::id_to_name(board_id).await;
         if let Some(name) = name {
             self.boards.get(&name).cloned()
         } else {
@@ -100,6 +91,7 @@ pub(crate) struct Users {
 impl Users {
     pub async fn load() -> Self {
         let mut users = Self { db: vec![] };
+        BoardMap::load().await;
 
         let file = File::options().read(true).open(USERS_FILE);
         if file.is_err() {
@@ -108,8 +100,6 @@ impl Users {
 
         let mut file = file.unwrap();
         let mut contents = String::new();
-
-        BoardMap::load_from_file().await;
 
         file.read_to_string(&mut contents).unwrap();
         let file_users: Vec<User> = serde_json::from_str::<Vec<User>>(&contents).unwrap();
@@ -163,7 +153,7 @@ pub trait Visible {
 #[async_trait]
 impl Visible for Card {
     async fn is_visible(&self, user: &User) -> bool {
-        if let Some(permission) = user.get_permission(&self.id_board) {
+        if let Some(permission) = user.get_permission(&self.id_board).await {
             match permission {
                 BoardPermission::Moderator => true,
                 BoardPermission::SeeAll => true,
@@ -178,13 +168,13 @@ impl Visible for Card {
 #[async_trait]
 impl Visible for Board {
     async fn is_visible(&self, user: &User) -> bool {
-        user.get_permission(&self.id).is_some()
+        user.get_permission(&self.id).await.is_some()
     }
 }
 
 #[async_trait]
 impl Visible for List {
     async fn is_visible(&self, user: &User) -> bool {
-        user.get_permission(&self.board_id).is_some()
+        user.get_permission(&self.board_id).await.is_some()
     }
 }

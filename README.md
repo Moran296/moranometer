@@ -48,5 +48,6 @@ Every new user contacting the moranometer bot will be added to the file (accordi
 
 
 ## TODO:
-* Hash boards and boards id in a database instead of using  a json file.
+* Always change/delete messages instead of sending new ones
+* Optimize (presentLists is very slow)
 * Write documentation for using own moranometer.
